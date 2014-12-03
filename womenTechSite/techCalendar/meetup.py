@@ -2,10 +2,15 @@
 import requests
 import json
 import datetime as dt
+# from django.conf import settings
+# settings.configure()
+# import django
+# django.setup()
+
 
 # relative import might need to be fixed later
-import local.apiKeys as ak
-import models as tcm
+import techCalendar.local.apiKeys as ak
+import techCalendar.models as tcm
 
 #from requests_oauthlib import OAuth1
 
