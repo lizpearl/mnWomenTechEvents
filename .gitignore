@@ -58,3 +58,6 @@ target/
 womenTechSite/techCalendar/local
 womenTechSite/db.sqlite3
 
+# Emacs backup files 
+*.*~
+
