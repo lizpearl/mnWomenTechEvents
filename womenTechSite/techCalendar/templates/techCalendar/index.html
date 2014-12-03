@@ -3,11 +3,20 @@
 <link rel="stylesheet" type="text/css" href="{% static 'techCalendar/style.css' %}" />
 
 {% if events_list %}
-    <ul>
+<table>
+    <tr>
+        <td> Date </td>
+        <td> Group </td>
+        <td> Event </td>
+    </tr>
     {% for event in events_list %}
-        <li><a href="{{ event.link }}/">{{ event.group.name}}:{{event.title }}</a></li>
+    <tr>
+         <td> {{ event.start_datetime}} </td>
+         <td> {{ event.group }} </td>
+         <td>  <a href="{{ event.link }}/">{{ event.title }}</a> </td>
+    </tr>
     {% endfor %}
-    </ul>
+</table>
 {% else %}
     <p>No events are available.</p>
 {% endif %}
