@@ -1,6 +1,4 @@
 
-
-# boiler plate .gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -59,3 +57,4 @@ target/
 # Local content/settings
 womenTechSite/techCalendar/local
 womenTechSite/db.sqlite3
+
