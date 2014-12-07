@@ -47,7 +47,7 @@ class EventbriteEvent:
             eventbriteEvents = r.json()['events']
             #print eventbriteEvents
             for ev in eventbriteEvents:
-                 print ev['resource_uri']
+                 print ev['url']
                  print ev['name']['text']
                  print ev['start']['utc']
                  print ev['end']['utc']
@@ -65,11 +65,11 @@ class EventbriteEvent:
                                                                      title = ev['name']['text'],
                                                                      start_datetime = ev['start']['utc'],
                                                                      end_datetime = ev['end']['utc'] ,
-                                                                     link = ev['resource_uri'])
+                                                                     link = ev['url'])
 
 
-#if __name__ == __main__:
-ebe = EventbriteEvent()
-ebe.storeEvents()
+if __name__ == '__main__':
+    ebe = EventbriteEvent()
+    ebe.storeEvents()
 
 
