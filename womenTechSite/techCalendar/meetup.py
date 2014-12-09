@@ -3,6 +3,7 @@
 import requests
 import json
 import datetime as dt
+import pytz
 
 import techCalendar.models as tcm
 import techCalendar.eventSite as es
@@ -22,12 +23,22 @@ class MeetupEvent(es.EventSite):
         super(MeetupEvent, self).__init__(
             host="http://api.meetup.com",
             apiGetEvents="/2/events",
-            groupDict=meetupGroups)
+            groupDict=meetupGroups,
+            groupType=tcm.CalendarEvent.MEETUP)
 
-    def makeParamPayload(self, groupId):
-        return {'group_urlname': groupId,
-                'omit': 'venue,fee', 'key': ak.meetupKey,
-                'fields': 'timezone'}
+    def makeParamPayload(self, groupId, rangeStart=None):
+        payload = {'group_urlname': groupId,
+                   'omit': 'venue,fee',
+                   'key': ak.meetupKey,
+                   'fields': 'timezone'}
+        if rangeStart:
+
+            # Meetup api says time should be ms since the epoch
+            # and should be comma delimited
+            epochStart = int(rangeStart.strftime("%s")) * 1000
+            payload['time'] = str(epochStart) + ","
+
+        return payload
 
     def parseEvents(self, response):
         createdEvents = 0
@@ -42,20 +53,28 @@ class MeetupEvent(es.EventSite):
             eventTitle = ev['name']
             eventCreated = ev['created']
 
-            startTimeUTC = eventStart / 1000
-            endTimeUTC = (eventStart + eventDuration) / 1000
-            createdTimeUTC = eventCreated / 1000
+            # Make all datetime object timezone aware
+            startTimeAware = pytz.timezone(eventTimeZone).localize(
+                dt.datetime.fromtimestamp(eventStart / 1000))
+
+            endTime = (eventStart + eventDuration) / 1000
+            endTimeAware = pytz.timezone(eventTimeZone).localize(
+                dt.datetime.fromtimestamp(endTime))
+
+            createdTimeAware = pytz.timezone(eventTimeZone).localize(
+                dt.datetime.fromtimestamp(eventCreated / 1000))
+
             (tg, created) = tcm.TechGroup.objects.get_or_create(
                 name=ev['group']['name'])
 
             (ce, created) = tcm.CalendarEvent.objects.get_or_create(
                 group=tg,
                 title=eventTitle,
-                start_datetime=dt.datetime.fromtimestamp(startTimeUTC),
-                end_datetime=dt.datetime.fromtimestamp(endTimeUTC),
+                start_datetime=startTimeAware,
+                end_datetime=endTimeAware,
                 link=eventUrl,
                 source=tcm.CalendarEvent.MEETUP,
-                created_datetime=dt.datetime.fromtimestamp(createdTimeUTC))
+                created_datetime=createdTimeAware)
             createdEvents += created
         return createdEvents
 

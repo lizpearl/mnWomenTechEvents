@@ -10,7 +10,7 @@ import techCalendar.eventbrite as tce
 # Create your views here.
 def index(request):
 
-    # Probably not the place for this 
+    # Probably not the place for this
     # It's also slow....
     mue = tcm.MeetupEvent()
     mue.storeEvents()
@@ -18,10 +18,9 @@ def index(request):
     ebe = tce.EventbriteEvent()
     ebe.storeEvents()
 
-    events_list = CalendarEvent.objects.order_by( 'start_datetime' )
+    events_list = CalendarEvent.objects.order_by('start_datetime')
     template = loader.get_template('techCalendar/index.html')
-    context = RequestContext ( request ,
-        { 'events_list': events_list, 
-        })
+    context = RequestContext(request,
+                             {'events_list': events_list,
+                              })
     return HttpResponse(template.render(context))
-

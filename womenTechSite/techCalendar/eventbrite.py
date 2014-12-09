@@ -19,24 +19,29 @@ class EventbriteEvent(es.EventSite):
         super(EventbriteEvent, self).__init__(
             host="http://www.eventbriteapi.com",
             apiGetEvents="/v3/events/search/",
-            groupDict=eventbriteGroups)
+            groupDict=eventbriteGroups,
+            groupType=tcm.CalendarEvent.EVENTBRITE)
 
-    def makeParamPayload(self, groupId):
+    def makeParamPayload(self, groupId, rangeStart=None):
 
         # Assumptions: Some groups are nationals so use venue city as
         # Minneapolis as a filter. This should probably be changed to
         # something more general since events might be held in
         # St. Paul or the suburbs
 
-        return {'organizer.id': groupId,
-                'venue.city': "Minneapolis",
-                'token': ak.eventbriteKey}
+        payload = {'organizer.id': groupId,
+                   'venue.city': "Minneapolis",
+                   'token': ak.eventbriteKey}
+        if rangeStart:
+            payload['date_created.range_start'] = rangeStart
+
+        return payload
 
     def parseEvents(self, response):
         createdEvents = 0
         eventbriteEvents = (response.json()).get('events', [])
         for ev in eventbriteEvents:
-            # Need a try/catch here
+            # Need a try/catch here to handle missing information
             eventUrl = ev['url']
             eventTitle = ev['name']['text']
             eventStart = ev['start']['utc']

@@ -8,13 +8,20 @@ import techCalendar.models as tcm
 
 class EventSite(object):
 
-    def __init__(self, host, apiGetEvents, groupDict={}):
+    """
+    Base cal
+    """
+
+    # groupDict is a dictionary of key value pairs
+    def __init__(self, host, apiGetEvents, groupDict={},
+                 groupType=tcm.CalendarEvent.NONE):
         self.host = host
         self.apiGetEvents = apiGetEvents
         self.groupDict = groupDict
         self.groupUrl = self.host + self.apiGetEvents
+        self.groupType = groupType
 
-    def makeParamPayload(self, groupId):
+    def makeParamPayload(self, groupId, rangeStart=None):
         print "EventSite:makeParamPayload called"
         print "Need to implement this function for child class"
 
@@ -23,8 +30,16 @@ class EventSite(object):
             self.storeGroupEvents(v)
 
     def storeGroupEvents(self, groupId):
-        payload = self.makeParamPayload(groupId)
+        # Set up to only get events after the latest
+        # timestamp but since this calendar isn't
+        # time critical, just get all events again
+
+        latestCreated = None
+
+        payload = self.makeParamPayload(groupId,
+                                        rangeStart=latestCreated)
         r = requests.get(self.groupUrl, params=payload)
+        print r.url
 
         if (r.status_code == requests.codes.ok):
             return self.parseEvents(r)
