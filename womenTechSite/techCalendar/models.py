@@ -28,7 +28,7 @@ class CalendarEvent (models.Model):
     start_datetime = models.DateTimeField('start_datetime')
     end_datetime = models.DateTimeField('end_datetime')
     link = models.CharField(max_length=2048)
-    source = models.IntegerField(choices=NONE)
+    source = models.IntegerField(default=NONE)
     created_datetime = models.DateTimeField('created_datetime')
 
     def __str__(self):

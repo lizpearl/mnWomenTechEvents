@@ -1,72 +1,63 @@
 
+
 import requests
 import json
 import datetime as dt
 
-import techCalendar.local.apiKeys as ak
 import techCalendar.models as tcm
+import techCalendar.eventSite as es
+import techCalendar.local.apiKeys as ak
 
 
-class MeetupEvent:
+class MeetupEvent(es.EventSite):
 
     def __init__(self):
-        self.meetupApiHost = "http://api.meetup.com"
-        self.eventGet = "/2/events"
+        meetupGroups = {
+            'Girl Develop It Minneapolis': 'Girl-Develop-It-Minneapolis',
+            'PyLadies Twin Cities': 'PyLadiesTC',
+            'Girls in Tech Minneapolis': 'Girls-in-Tech-Minneapolis',
+            'Twin Cities Visualization Group': 'Twin-Cities-Visualization-Group',
+            'Open Twin Cities': 'OpenTwinCities'}
 
-        # TODO; Make this configurable
-        self.meetupGroups = ['Girl-Develop-It-Minneapolis', 'PyLadiesTC',
-                             'Girls-in-Tech-Minneapolis', 'Twin-Cities-Visualization-Group',
-                             'OpenTwinCities']
+        super(MeetupEvent, self).__init__(
+            host="http://api.meetup.com",
+            apiGetEvents="/2/events",
+            groupDict=meetupGroups)
 
-    def makeMeetupPayload(self, meetupGroupName):
-        return {'group_urlname': meetupGroupName,
+    def makeParamPayload(self, groupId):
+        return {'group_urlname': groupId,
                 'omit': 'venue,fee', 'key': ak.meetupKey,
                 'fields': 'timezone'}
 
-    # Sample Url
-    # https://api.meetup.com/2/events?group_urlname=Girl-Develop-It-Minneapolis&omit=venue,fee&key=<meetup
-    # key here>
-    def storeEvents(self):
-        meetupUrl = self.meetupApiHost + self.eventGet
+    def parseEvents(self, response):
+        createdEvents = 0
+        meetupEvents = (response.json()).get('results', [])
+        for ev in meetupEvents:
+            # Need a try/catch here
+            eventUrl = ev['event_url']
+            eventGroup = ev['group']['name']
+            eventStart = ev['time']  # milliseconds since the epoch
+            eventTimeZone = ev['timezone']
+            eventDuration = ev['duration']
+            eventTitle = ev['name']
+            eventCreated = ev['created']
 
-        # grab json from each meetup group
-        # API only allows for one group to be requested at once
-        for m in self.meetupGroups:
-            payload = self.makeMeetupPayload(m)
-            r = requests.get(meetupUrl, params=payload)
+            startTimeUTC = eventStart / 1000
+            endTimeUTC = (eventStart + eventDuration) / 1000
+            createdTimeUTC = eventCreated / 1000
+            (tg, created) = tcm.TechGroup.objects.get_or_create(
+                name=ev['group']['name'])
 
-            meetupEvents = r.json()['results']
-
-            # need to do checks for
-            for ev in meetupEvents:
-                self.storeSingleEvent(ev)
-
-    def storeSingleEvent(self, meetupEvent):
-
-        # Need a try/catch here
-        eventUrl = ev['event_url']
-        eventGroup = ev['group']['name']
-        eventStart = ev['time']  # milliseconds since the epoch
-        eventTimeZone = ev['timezone']
-        eventDuration = ev['duration']
-        eventTitle = ev['name']
-        eventCreated = ev['created']
-
-        startTimeUTC = eventStart / 1000
-        endTimeUTC = (eventStart + eventDuration) / 1000
-        createdTimeUTC = eventCreated / 1000
-        (tg, created) = tcm.TechGroup.objects.get_or_create(
-            name=ev['group']['name'])
-
-        (ce, created) = tcm.CalendarEvent.objects.get_or_create(
-            group=tg,
-            title=eventTitle,
-            start_datetime=dt.datetime.fromtimestamp(startTimeUTC),
-            end_datetime=dt.datetime.fromtimestamp(endTimeUTC),
-            link=eventUrl,
-            source=tcm.CalendarEvent.MEETUP,
-            created_datetime=dt.datetime.fromtimestamp(createdTimeUTC))
-
+            (ce, created) = tcm.CalendarEvent.objects.get_or_create(
+                group=tg,
+                title=eventTitle,
+                start_datetime=dt.datetime.fromtimestamp(startTimeUTC),
+                end_datetime=dt.datetime.fromtimestamp(endTimeUTC),
+                link=eventUrl,
+                source=tcm.CalendarEvent.MEETUP,
+                created_datetime=dt.datetime.fromtimestamp(createdTimeUTC))
+            createdEvents += created
+        return createdEvents
 
 if __name__ == '__main__':
     mue = MeetupEvent()
