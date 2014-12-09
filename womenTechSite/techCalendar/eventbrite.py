@@ -2,74 +2,71 @@
 import requests
 import json
 import datetime as dt
-# from django.conf import settings
-# settings.configure()
-# import django
-# django.setup()
 
-# relative import might need to be fixed later
 import techCalendar.local.apiKeys as ak
 import techCalendar.models as tcm
 
-#from requests_oauthlib import OAuth1
 
-# >>> url = 'https://api.twitter.com/1.1/account/verify_credentials.json'
-# >>> auth = OAuth1('YOUR_APP_KEY', 'YOUR_APP_SECRET',
-#                   'USER_OAUTH_TOKEN', 'USER_OAUTH_TOKEN_SECRET')
 class EventbriteEvent:
 
-    def __init__( self ):
-        self.eventbriteHost = "http://www.eventbriteapi.com" 
+    def __init__(self):
+        self.eventbriteHost = "http://www.eventbriteapi.com"
         self.eventbriteGet = "/v3/events/search/"
-        self.eventbriteGroups = { 'Geekettes' : 2850467571 ,
-                         'Gr8Ladies' : 6848465013 }
+        self.eventbriteGroups = {'Geekettes': 2850467571,
+                                 'Gr8Ladies': 6848465013,
+                                 'OpenTwinCities': 31452055}
 
-    def makeEventbritePayload ( self, eventBriteId ): 
-        return { 'organizer.id' : eventBriteId,
-                 'venue.city' : "Minneapolis", 
-                 'token':ak.eventbriteKey }
+    def makeEventbritePayload(self, eventBriteId):
 
+        # Assumptions: Some groups are nationals so use venue city as
+        # Minneapolis as a filter. This should probably be changed to
+        # something more general since events might be held in
+        # St. Paul or the suburbs
+
+        return {'organizer.id': eventBriteId,
+                'venue.city': "Minneapolis",
+                'token': ak.eventbriteKey}
 
 
 # Assumptions
-# These groups don't have a lot of events to warrent a page limit
-# Sample Url 
-# https://api.meetup.com/2/events?group_urlname=Girl-Develop-It-Minneapolis&omit=venue,fee&key=<meetup key here>
-    def storeEvents ( self ):
+# These groups don't have a lot of events to warrant a page limit
+# Sample Url
+# https://api.meetup.com/2/events?group_urlname=Girl-Develop-It-Minneapolis&omit=venue,fee&key=<meetup
+# key here>
+    def storeEvents(self):
         eventbriteUrl = self.eventbriteHost + self.eventbriteGet
 
         # grab json from each meetup group
         # API only allows for one group to be requested at once
-        for ( k, v ) in self.eventbriteGroups.items():
-            payload = self.makeEventbritePayload ( v )
-            r = requests.get ( eventbriteUrl, params=payload )
+        for (k, v) in self.eventbriteGroups.items():
+            payload = self.makeEventbritePayload(v)
+            r = requests.get(eventbriteUrl, params=payload)
 
             eventbriteEvents = r.json()['events']
-            #print eventbriteEvents
             for ev in eventbriteEvents:
-                 print ev['url']
-                 print ev['name']['text']
-                 print ev['start']['utc']
-                 print ev['end']['utc']
-                 print ev['organizer']['name']
+                self.storeSingleEvent(ev)
 
-                 groupName = ev['organizer']['name']
-            #     print ev['duration']
-            #     print ev['name']
+    # Need sample single event info here
+    def storeSingleEvent(self, eventBriteEvent):
 
-            #     startTimeUTC = ev['time']/1000
-            #     endTimeUTC = (ev['time'] + ev['duration'])/1000
-                 (tg, created) = tcm.TechGroup.objects.get_or_create( name = groupName )
-            
-                 (ce, created) = tcm.CalendarEvent.objects.get_or_create( group = tg,
-                                                                     title = ev['name']['text'],
-                                                                     start_datetime = ev['start']['utc'],
-                                                                     end_datetime = ev['end']['utc'] ,
-                                                                     link = ev['url'])
+        # Need a try/catch here
+        eventUrl = ev['url']
+        eventTitle = ev['name']['text']
+        eventStart = ev['start']['utc']
+        eventEnd = ev['end']['utc']
+        eventGroup = ev['organizer']['name']
+
+        (tg, created) = tcm.TechGroup.objects.get_or_create(
+            name=eventGroup)
+
+        (ce, created) = tcm.CalendarEvent.objects.get_or_create(
+            group=tg,
+            title=eventTitle,
+            start_datetime=eventStart,
+            end_datetime=eventEnd,
+            link=eventUrl)
 
 
 if __name__ == '__main__':
     ebe = EventbriteEvent()
     ebe.storeEvents()
-
-
