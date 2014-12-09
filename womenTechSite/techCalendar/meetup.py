@@ -32,7 +32,6 @@ class MeetupEvent(es.EventSite):
                    'key': ak.meetupKey,
                    'fields': 'timezone'}
         if rangeStart:
-
             # Meetup api says time should be ms since the epoch
             # and should be comma delimited
             epochStart = int(rangeStart.strftime("%s")) * 1000

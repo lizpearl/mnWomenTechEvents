@@ -11,7 +11,6 @@ import techCalendar.models as tcm
 class EventbriteEvent(es.EventSite):
 
     def __init__(self):
-
         eventbriteGroups = {'Geekettes': 2850467571,
                             'Gr8Ladies': 6848465013,
                             'OpenTwinCities': 5847915855}
